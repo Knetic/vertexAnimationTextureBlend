@@ -28,9 +28,8 @@ bl_info = {
     "description": "A tool for storing per frame vertex data for use in a vertex shader.",
     "warning": "",
     "doc_url": "",
-    "category": "Not Unreal Tools",
+    "category": "Vertex Animation Textures",
 }
-
 
 import bpy
 import bmesh
@@ -102,11 +101,11 @@ def bake_vertex_data(context, data, offsets, normals, size):
     
     blend_path = bpy.data.filepath
     blend_path = os.path.dirname(bpy.path.abspath(blend_path))
-    subfolder_path = os.path.join(blend_path, "vaexport")
-    if not os.path.exists(subfolder_path):
-        os.makedirs(subfolder_path)
-    openexr_filepath = os.path.join(subfolder_path, "offsets.exr")
-    png_filepath = os.path.join(subfolder_path, "normals.png")
+    blend_name = bpy.path.basename(bpy.data.filepath)
+    subfolder_path = blend_path
+    
+    openexr_filepath = os.path.join(subfolder_path, blend_name + "_offsets.exr")
+    png_filepath = os.path.join(subfolder_path, blend_name + "_normals.png")
     
     openexr_export_scene = bpy.data.scenes.new('openexr export scene')
     openexr_export_scene.sequencer_colorspace_settings.name = 'Non-Color'
@@ -191,12 +190,12 @@ class OBJECT_OT_ProcessAnimMeshes(bpy.types.Operator):
                         f"Objects with {mod.type.title()} modifiers are not allowed!"
                     )
                     return {'CANCELLED'}
-        #if units.system != 'METRIC' or round(units.scale_length, 2) != 0.01:
-        #    self.report(
-        #        {'ERROR'},
-        #        "Scene Unit must be Metric with a Unit Scale of 0.01!"
-        #    )
-        #    return {'CANCELLED'}        
+        if units.system != 'METRIC' or round(units.scale_length, 2) != 0.01:
+           self.report(
+               {'ERROR'},
+               "Scene Unit must be Metric with a Unit Scale of 0.01!"
+           )
+           return {'CANCELLED'}        
         if vertex_count > 8192:
             self.report(
                 {'ERROR'},
@@ -224,7 +223,7 @@ class VIEW3D_PT_VertexAnimation(bpy.types.Panel):
     bl_idname = "VIEW3D_PT_vertex_animation"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_category = "Not Unreal Tools"
+    bl_category = "Vertex Animation"
 
     def draw(self, context):
         layout = self.layout

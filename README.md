@@ -1,60 +1,57 @@
-# Not Unreal Tools
+# Vertex Animation Textures (for Blender)
 
-Modified by **yanorax**
+Vertex Animation Textures are a standard format to export a vertex-based animations. See [Why](#why) for clarification on what they are and why they're useful.
 
-Vertex Animation add-on tested with **Blender 2.83.16 LTS** and **2.93.1 LTS**
+This is a Blender plugin primarily meant to export mesh and animation-textures from Blender into Unreal.
 
-export_mesh.glb tested with **Godot Engine 3.3**
-
-## Changes From Original
-
-### Vertex Animation
-* Removed UE unit scale and metric system check
-* Export mesh UV coords are placed at V = 0.0 instead of V = 0.5
-* Frame mesh data is processed in default list order
-* New **offsets.exr** and **normals.png** image files are saved into a **vaexport** subfolder in the .blend file path. 
-
-## Description
-A series of tools used to store vertex data in various ways. The data can then used in a game engine to animate meshes via a vertex shader.
-
-### Mesh Morpher
-Used to store vertex offsets between a meshes shape keys in it's UV layers. Optionally vertex normals from it's second shape key can be stored in it's vertex colors.
-
-### Vertex Animation
-Used to store vertex offsets and normals of selected mesh objects per frame into image textures.
-
-## Getting Started
-These tools can be installed as add-ons or ran as scripts. Each tool has a panel located in the 3D View's sidebar under the Unreal Tools tab.
+Tested with **Blender 3.6**, but this plugin generally found to work with **2.9+**.
 
 ### Installing as an Add-on
-First download and unzip files into desired directory.
 
-While in Blender open the user preferences window.
+**Edit > Preferences > Add-Ons**
 
-**Edit > Preferences**
+* "Install" button
+* Select `vertex_animation.py`
 
-Navigate the the **add-ons** tab.
+### Usage
 
-Click the option to **install**.
+After installation, a toolbar will be placed on the side of the 3d view (sibling to "Tool" and "Item") called Unreal Tools. That offers a range of frames, and a button to process them into a VAT.
 
-A file browser will open.
+To create a vertex animation in the first place, install the "AnimAll" plugin, and use the "Animate" tab (sibling to "Tool" and "Item") to create keyframes for selected vertices for a given point in the timeline, just like you would for creating keyframes on bones.
 
-Navigate to directory containing the tools.
-    
-Select the tool you want install.
+Be sure to set these scenewide settings in Blender before export;
+* Scene -> Units: must be 0.01cm (to match Unreal units)
+* Output -> Format -> Frame Rate
+	* This greatly affects exported VAT size and fidelity. 
+	* In Unreal you'll probably be linearly interpolating between keys, so depending on the complexity of your model and animation, you will need far fewer keys than you might expect; 13fps (the same as a flipbook or anime) works surprisingly well for non-character animations.
 
-Then click **install add-on**.
+After export, you'll have an `export_mesh` which contains UV's necessary for the proper functioning of a VAT material in Unreal - use _that mesh_ as your static mesh. You'll also have an `offsets.exr` and a `normals.png` which are used by the material. If your usage doesn't require normals, you can safely exclude them and just use the offsets.
 
-### Running as a Script
-First download and unzip files into desired directory.
+For use within Unreal, refer to the [Unreal doc on setup](https://docs.unrealengine.com/5.0/en-US/vertex-animation-tool---timeline-meshes-in-unreal-engine/). But in general;
 
-While in Blender use the text editor to open the tool you want to use.
+**Both textures**
+* Mipmaps: none
+* texgroup: UI
+* SRGB: false
+* Filter: nearest
 
-Then either click the run script operator (the **arrow** icon in header) or use **alt+p** shortcut.
+**Offsets texture**
+* Compression: HDR
 
-## Authors
+**Normals texture**
+* Compression: Vector Displacement Map
 
-* **Joshua Bogart**
+## Why?
+
+In the early days of 3d games, all animations were vertex animations. Each frame had to be manually posed by an animator and saved, which was excruciatingly hard to do properly, since it's hard to maintain the volume and proportion of characters when you're manipulating them. Eventually, cpu's caught up enough that realtime skeletal animations became viable - leading to foot IK, head targeting, ragdolls, VO-matching, mocap, and all the things we've seen for 20 years -- so vertex animations fell deeply out of favor.
+
+But, that's not to say VA is useless. Skeletal animations are _expensive_ on CPU, and are the primary reason why it's hard to have hundreds or thousands of animated characters on-screen in realtime. Vertex animations are _cheap_ on everything at realtime, and only modestly heavier on storage size. Skeletal is also ill-suited to complex meshes without obvious articulating limbs; like a plant swaying in the wind, a fiery explosion pushing outwards, or a lava flow pulsing downstream. And of course, "cinematic physics" as demonstrated in a few titles are just baked vertex animations, in some form or fashion. And, VAT are much more efficient than traditional vertex animations, since they occur in a geometry shader -- meaning every vertex can be offset _in parallel_ (a dramatic improvement over what was being done in the 90s, where a cpu did them in sequence). 
+
+It's not a universal technique, but in situations where they shine, they _really_ shine.
 
 ## Acknowledgments
-* Adapted for Blender from 3ds Max scripts created by **Jonathan Lindquist** at **Epic Games**.
+
+* Original concept adapted for Blender from 3ds Max scripts created by **Jonathan Lindquist** at **Epic Games**.
+* Original Blender scripts forked from [Josh Bogart's unreal_tools](https://github.com/JoshRBogart/unreal_tools), taking some image exports from [yanorax's fork](https://github.com/yanorax/unreal_tools).
+
+This repo largely customizes the workflow of Bogart's version, auto-exporting images and preventing copies being made.
